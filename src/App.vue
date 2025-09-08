@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import LoginForm from './components/LoginForm.vue'
+
 const loggedInUser = ref(null)
 try {
   loggedInUser.value = JSON.parse(localStorage.getItem("user"));
@@ -43,7 +44,8 @@ function login(user) {
       </div>
     </div>
     <div v-else>
-      <LoginForm @login-success="login" />
+      <!-- <LoginForm @login-success="login" /> -->
+      <router-view />
     </div>
   </main>
 </template>
