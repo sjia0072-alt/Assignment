@@ -1,6 +1,6 @@
 <!-- src/components/LoginForm.vue -->
 <template>
-  <form @submit.prevent="handleSubmit">
+  <form @submit.prevent="handleLogin">
     <div class="mb-3">
       <label for="email" class="form-label">Email</label>
       <input type="email" class="form-control" id="email" placeholder="name@example.com" required v-model="email" />
@@ -34,7 +34,7 @@ const errorMsg = ref('');
 
 const emit = defineEmits(['login-success']);
 
-function handleSubmit() {
+function handleLogin() {
   for (const user of users) {
     if (user.email == email.value && user.password == password.value) {
       const loggedInUser = {
