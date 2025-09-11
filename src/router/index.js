@@ -3,6 +3,7 @@ import LoginForm from "../components/LoginForm.vue";
 import Register from "@/components/Register.vue";
 import AuthPage from "@/views/AuthPage.vue";
 import HomePage from "@/views/HomePage.vue";
+import AllUsersPage from "@/views/AllUsersPage.vue";
 
 const router = createRouter({
   history: createWebHistory(),
@@ -11,6 +12,11 @@ const router = createRouter({
       path: "/",
       name: "home",
       component: HomePage,
+    },
+    {
+      path: "/users",
+      name: "users",
+      component: AllUsersPage,
     },
     {
       path: "/auth",

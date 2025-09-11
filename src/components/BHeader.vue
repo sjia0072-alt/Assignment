@@ -13,6 +13,11 @@
           Sign In
         </router-link>
       </li>
+      <li class="nav-item bg-primary bg-opacity-25 rounded">
+        <router-link to="/users" class="nav-link" active-class="active text-light">
+          Users
+        </router-link>
+      </li>
     </ul>
   </header>
 </template>

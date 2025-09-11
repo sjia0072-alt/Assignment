@@ -25,24 +25,14 @@
 
 <script setup>
 
-import { ref, onMounted } from 'vue';
+import { ref } from 'vue';
 import { login } from '@/service/auth';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from '@/service/firebase';
 
 const email = ref('');
 const password = ref('');
 const errorMsg = ref('');
 
 const emit = defineEmits(['login-success']);
-const currentUser = ref(null)
-
-onMounted(() => {
-  onAuthStateChanged(auth, (user) => {
-    currentUser.value = user
-    console.log(user)
-  })
-})
 
 async function handleLogin() {
   try {
