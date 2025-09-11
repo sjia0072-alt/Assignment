@@ -2,13 +2,15 @@ import { createRouter, createWebHistory } from "vue-router";
 import LoginForm from "../components/LoginForm.vue";
 import Register from "@/components/Register.vue";
 import AuthPage from "@/views/AuthPage.vue";
+import HomePage from "@/views/HomePage.vue";
 
 const router = createRouter({
   history: createWebHistory(),
   routes: [
     {
       path: "/",
-      redirect: "/auth"
+      name: "home",
+      component: HomePage,
     },
     {
       path: "/auth",
