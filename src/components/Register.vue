@@ -42,7 +42,6 @@ const formData = ref({
   email: '',
   password: '',
   confirm: '',
-  role: '',
 });
 async function handleRegister() {
   const form = formData.value;
@@ -51,7 +50,7 @@ async function handleRegister() {
     return;
   }
   try {
-    await register(form.name, form.email, form.password, form.role);
+    await register(form.name, form.email, form.password);
     console.log("Register Successful.")
   } catch (error) {
     console.error(error)

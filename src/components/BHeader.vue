@@ -8,12 +8,22 @@
           Home
         </router-link>
       </li>
-      <li class="nav-item bg-primary bg-opacity-25 rounded">
+      <li v-if="userInfo.role === 'guest'" class="nav-item bg-primary bg-opacity-25 rounded">
         <router-link to="/auth" class="nav-link" active-class="active text-light">
           Sign In
         </router-link>
       </li>
-      <li class="nav-item bg-primary bg-opacity-25 rounded">
+      <li v-else class="nav-item bg-primary bg-opacity-25 rounded">
+        <router-link to="/user-info" class="nav-link" active-class="active text-light">
+          User Info
+        </router-link>
+      </li>
+      <li v-if="userInfo.role !== 'guest'" class="nav-item bg-primary bg-opacity-25 rounded">
+        <router-link to="/recommend" class="nav-link" active-class="active text-light">
+          Recommend
+        </router-link>
+      </li>
+      <li v-if="userInfo.role == 'admin'" class="nav-item bg-primary bg-opacity-25 rounded">
         <router-link to="/users" class="nav-link" active-class="active text-light">
           Users
         </router-link>
@@ -21,3 +31,7 @@
     </ul>
   </header>
 </template>
+<script setup>
+import { userInfo } from '@/service/auth';
+
+</script>

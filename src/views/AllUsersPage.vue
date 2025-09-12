@@ -21,19 +21,15 @@
 </template>
 <script setup>
 import { onMounted, ref } from 'vue';
-import { getDocs } from 'firebase/firestore';
-import { userCollection } from '@/service/store';
+import { loadAll } from '@/service/store';
 
 const users = ref([{
-	name: "test",
-	email: "test",
-	role: "test",
+	name: "loading",
+	email: "loading",
+	role: "loading",
 }])
 
-onMounted(() => {
-	getDocs(userCollection).then(data => {
-		users.value = data;
-		console.log(users);
-	})
+onMounted(async () => {
+	users.value = await loadAll('users');
 })
 </script>

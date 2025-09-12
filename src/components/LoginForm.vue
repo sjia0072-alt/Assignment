@@ -26,7 +26,8 @@
 <script setup>
 
 import { ref } from 'vue';
-import { login } from '@/service/auth';
+import { getUserInfo, login } from '@/service/auth';
+import router from '@/router';
 
 const email = ref('');
 const password = ref('');
@@ -36,8 +37,10 @@ const emit = defineEmits(['login-success']);
 
 async function handleLogin() {
   try {
-    await login(email.value, password.value);
+    const userCred = await login(email.value, password.value);
+    await getUserInfo(userCred.user)
     console.log("Login Successful.");
+    router.push({ name: "user-info" })
   } catch (error) {
     errorMsg.value = "Password mismatch";
     console.error(error);
