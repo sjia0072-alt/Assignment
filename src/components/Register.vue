@@ -45,15 +45,56 @@ const formData = ref({
 });
 async function handleRegister() {
   const form = formData.value;
-  if (form.password !== form.confirm) {
-    errorMsg.value = 'Password mismatch';
+
+  // Clear previous error messages
+  errorMsg.value = '';
+
+  // Basic validation
+  if (!form.name || !form.email || !form.password || !form.confirm) {
+    errorMsg.value = 'Please fill in all required fields';
     return;
   }
+
+  // Password validation
+  if (form.password !== form.confirm) {
+    errorMsg.value = 'Passwords do not match';
+    return;
+  }
+
+  // Password strength validation (minimum 6 characters)
+  if (form.password.length < 6) {
+    errorMsg.value = 'Password must be at least 6 characters long';
+    return;
+  }
+
   try {
     await register(form.name, form.email, form.password);
     console.log("Register Successful.")
+    // Optionally, you can redirect to login page or show success message
+    // router.push({ name: 'login' });
   } catch (error) {
-    console.error(error)
+    console.error(error);
+    // Provide user-friendly error messages based on Firebase error codes
+    switch (error.code) {
+      case 'auth/invalid-email':
+        errorMsg.value = "Please enter a valid email address";
+        break;
+      case 'auth/email-already-in-use':
+        errorMsg.value = "This email is already registered. Please use a different email or login";
+        break;
+      case 'auth/weak-password':
+        errorMsg.value = "Password is too weak. Please use a stronger password";
+        break;
+      case 'auth/network-request-failed':
+        errorMsg.value = "Network connection failed. Please check your network and try again";
+        break;
+      case 'auth/internal-error':
+        errorMsg.value = "Internal system error. Please try again later";
+        break;
+      default:
+        errorMsg.value = "Registration failed. Please try again later";
+        break;
+    }
   }
 }
 </script>

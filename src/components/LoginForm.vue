@@ -36,14 +36,49 @@ const errorMsg = ref('');
 const emit = defineEmits(['login-success']);
 
 async function handleLogin() {
+  // Clear previous error messages
+  errorMsg.value = '';
+
+  // Basic validation
+  if (!email.value || !password.value) {
+    errorMsg.value = "Please fill in all required fields";
+    return;
+  }
+
   try {
     const userCred = await login(email.value, password.value);
     await getUserInfo(userCred.user)
     console.log("Login Successful.");
     router.push({ name: "user-info" })
   } catch (error) {
-    errorMsg.value = "Password mismatch";
     console.error(error);
+    // Provide user-friendly error messages based on Firebase error codes
+    switch (error.code) {
+      case 'auth/invalid-email':
+        errorMsg.value = "Please enter a valid email address";
+        break;
+      case 'auth/user-disabled':
+        errorMsg.value = "This account has been disabled. Please contact administrator";
+        break;
+      case 'auth/user-not-found':
+        errorMsg.value = "User does not exist. Please check your email or register first";
+        break;
+      case 'auth/wrong-password':
+        errorMsg.value = "Incorrect password. Please try again";
+        break;
+      case 'auth/too-many-requests':
+        errorMsg.value = "Too many login attempts. Please try again later";
+        break;
+      case 'auth/network-request-failed':
+        errorMsg.value = "Network connection failed. Please check your network and try again";
+        break;
+      case 'auth/internal-error':
+        errorMsg.value = "Internal system error. Please try again later";
+        break;
+      default:
+        errorMsg.value = "Login failed. Please try again later";
+        break;
+    }
   }
 }
 </script>
