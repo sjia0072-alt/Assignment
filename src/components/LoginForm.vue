@@ -27,11 +27,13 @@
 
 import { ref } from 'vue';
 import { getUserInfo, login } from '@/service/auth';
-import router from '@/router';
+import { useRoute, useRouter } from 'vue-router';
 
 const email = ref('');
 const password = ref('');
 const errorMsg = ref('');
+const route = useRoute();
+const router = useRouter();
 
 const emit = defineEmits(['login-success']);
 
@@ -49,7 +51,10 @@ async function handleLogin() {
     const userCred = await login(email.value, password.value);
     await getUserInfo(userCred.user)
     console.log("Login Successful.");
-    router.push({ name: "user-info" })
+
+    // Check for redirect path
+    const redirectPath = route.query.redirect || '/user-info';
+    router.push(redirectPath);
   } catch (error) {
     console.error(error);
     // Provide user-friendly error messages based on Firebase error codes

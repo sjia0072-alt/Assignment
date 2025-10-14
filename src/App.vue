@@ -1,8 +1,10 @@
 <script setup>
 import BHeader from './components/BHeader.vue';
+import Toast from 'primevue/toast';
 </script>
 
 <template>
+  <Toast />
   <div class="d-flex flex-column min-vh-100">
     <header>
       <b-header />

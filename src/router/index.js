@@ -7,7 +7,7 @@ import AllUsersPage from "@/views/AllUsersPage.vue";
 import Recommend from "@/views/Recommend.vue";
 import UserInfo from "@/views/UserInfo.vue";
 import NotFound from "@/views/NotFound.vue";
-import { getUserInfo, userInfo } from "@/service/auth";
+import { userInfo, authInitialized } from "@/service/auth";
 
 const router = createRouter({
   history: createWebHistory(),
@@ -61,24 +61,37 @@ const router = createRouter({
   ],
 });
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
+  // wait for firestore's initialization
+  if (!authInitialized.value) {
+    await new Promise(resolve => {
+      const unwatch = setInterval(() => {
+        if (authInitialized.value) {
+          clearInterval(unwatch)
+          resolve()
+        }
+      }, 50)
+    })
+  }
+
   const userRole = userInfo.role;
+
   if (!to.meta.requiresRole) {
     next();
+    return;
   }
+
   if (!to.meta.requiresRole.includes(userRole)) {
     if (userRole === 'guest') {
-      console.log("log", to.meta.requiresRole, userRole)
-      getUserInfo().then(() => {
-        if (userInfo.role === 'guest') {
-          return next({ name: 'auth', query: { redirect: to.fullPath } });
-        }
-      })
+      console.log("Redirecting to auth - requires:", to.meta.requiresRole, "current:", userRole)
+      next({ name: 'login', query: { redirect: to.fullPath } });
     } else {
-      console.log("home")
-      return next({ name: 'home' });
+      console.log("Redirecting to home - insufficient permissions")
+      next({ name: 'home' });
     }
+    return;
   }
+
   next();
 });
 

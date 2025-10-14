@@ -27,7 +27,7 @@
 						{{rec.ratings.reduce((acc, current) => acc + current.rating, 0) / rec.ratings.length}}
 					</div>
 					<div v-else-if="userInfo.role === 'user'" class="text-center">
-						<Rating v-model="rec.rating" class="gap-2 large-stars" />
+						<Rating v-model="rec.rating" class="gap-2 large-stars text-warning" />
 					</div>
 					<div v-else> (Hidden) </div>
 				</td>
@@ -48,10 +48,11 @@ import { auth } from '@/service/firebase';
 import { userInfo } from '@/service/auth';
 import { save, loadAll, updateOne, deleteOne } from '@/service/store';
 import Rating from 'primevue/rating';
+import { useToast } from 'primevue/usetoast';
 
+const toast = useToast();
 const recommendations = ref([])
 const recommendation = ref('')
-const rating = ref(0)
 
 onMounted(async () => {
 	const data = await loadAll('recommend');
@@ -87,7 +88,7 @@ function handleRating(rec) {
 	}
 	updateOne('recommend', rec.id, {
 		ratings: rec.ratings
-	}).then(() => alert("Rate success"))
+	}).then(() => toast.add({ severity: 'success', summary: 'Rate success', life: 3000 }))
 }
 
 function deleteRec(id) {
