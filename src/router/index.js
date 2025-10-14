@@ -6,7 +6,8 @@ import HomePage from "@/views/HomePage.vue";
 import AllUsersPage from "@/views/AllUsersPage.vue";
 import Recommend from "@/views/Recommend.vue";
 import UserInfo from "@/views/UserInfo.vue";
-import { userInfo } from "@/service/auth";
+import NotFound from "@/views/NotFound.vue";
+import { getUserInfo, userInfo } from "@/service/auth";
 
 const router = createRouter({
   history: createWebHistory(),
@@ -52,6 +53,11 @@ const router = createRouter({
         },
       ],
     },
+    {
+      path: "/:pathMatch(.*)*",
+      name: "not-found",
+      component: NotFound,
+    },
   ],
 });
 
@@ -63,7 +69,11 @@ router.beforeEach((to, from, next) => {
   if (!to.meta.requiresRole.includes(userRole)) {
     if (userRole === 'guest') {
       console.log("log", to.meta.requiresRole, userRole)
-      return next({ name: 'auth', query: { redirect: to.fullPath } });
+      getUserInfo().then(() => {
+        if (userInfo.role === 'guest') {
+          return next({ name: 'auth', query: { redirect: to.fullPath } });
+        }
+      })
     } else {
       console.log("home")
       return next({ name: 'home' });

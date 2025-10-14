@@ -26,11 +26,9 @@
 					<div v-if="userInfo.role === 'admin'" class="text-center">
 						{{rec.ratings.reduce((acc, current) => acc + current.rating, 0) / rec.ratings.length}}
 					</div>
-					<div v-else-if="userInfo.role === 'user'" class="d-flex text-nowrap align-items-center gap-4">
-						<input type="range" class="form-range" min="1" max="5" v-model.number="rec.rating">
-						<span>{{ rec.rating }}</span>
+					<div v-else-if="userInfo.role === 'user'" class="text-center">
+						<Rating v-model="rec.rating" class="gap-2 large-stars" />
 					</div>
-
 					<div v-else> (Hidden) </div>
 				</td>
 				<td>
@@ -49,9 +47,11 @@ import { onMounted, ref } from 'vue';
 import { auth } from '@/service/firebase';
 import { userInfo } from '@/service/auth';
 import { save, loadAll, updateOne, deleteOne } from '@/service/store';
+import Rating from 'primevue/rating';
 
 const recommendations = ref([])
 const recommendation = ref('')
+const rating = ref(0)
 
 onMounted(async () => {
 	const data = await loadAll('recommend');
@@ -96,3 +96,10 @@ function deleteRec(id) {
 	)
 }
 </script>
+<style scoped>
+.large-stars :deep(.p-rating-icon) {
+	font-size: 1.5rem;
+	width: 1.5rem;
+	height: 1.5rem;
+}
+</style>

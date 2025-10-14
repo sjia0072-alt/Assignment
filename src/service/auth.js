@@ -33,6 +33,8 @@ const getUserInfo = async (user) => {
 
 onAuthStateChanged(auth, (user) => {
   getUserInfo(user).then(() => {
+    console.log(userInfo)
+    console.log(router.currentRoute)
     if (userInfo.role !== 'guest' && router.currentRoute.value.path === '/auth') {
       router.push({ name: 'user-info' })
     }
