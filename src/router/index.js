@@ -7,6 +7,7 @@ import AllUsersPage from "@/views/AllUsersPage.vue";
 import HealthRecommendationsPage from "@/views/HealthRecommendationsPage.vue";
 import Recommend from "@/views/Recommend.vue";
 import UserInfo from "@/views/UserInfo.vue";
+import EmailBroadcastPage from "@/views/EmailBroadcastPage.vue";
 import NotFound from "@/views/NotFound.vue";
 import { userInfo, authInitialized } from "@/service/auth";
 
@@ -40,6 +41,12 @@ const router = createRouter({
       path: "/users",
       name: "users",
       component: AllUsersPage,
+      meta: { requiresRole: ["admin"] },
+    },
+    {
+      path: "/email-broadcast",
+      name: "email-broadcast",
+      component: EmailBroadcastPage,
       meta: { requiresRole: ["admin"] },
     },
     {

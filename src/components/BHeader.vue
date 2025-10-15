@@ -34,6 +34,11 @@
             Users
           </router-link>
         </li>
+        <li v-if="userInfo.role == 'admin'" class="nav-item bg-primary bg-opacity-25 rounded">
+          <router-link to="/email-broadcast" class="nav-link" active-class="active">
+            Email
+          </router-link>
+        </li>
       </ul>
     </nav>
   </header>
