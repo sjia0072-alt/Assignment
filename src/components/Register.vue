@@ -1,34 +1,58 @@
 <!-- src/components/LoginForm.vue -->
 <template>
-  <form @submit.prevent="handleRegister">
-    <div class="mb-3">
-      <label for="name" class="form-label">Name</label>
-      <input type="text" class="form-control" id="name" placeholder="Your name" required v-model="formData.name" />
-    </div>
-    <div class="mb-3">
-      <label for="email" class="form-label">Email</label>
-      <input type="email" class="form-control" id="email" placeholder="name@example.com" required
-        v-model="formData.email" />
-    </div>
-    <div class="mb-3">
-      <label for="password" class="form-label">Password</label>
-      <input type="password" class="form-control" id="password" required v-model="formData.password" />
-    </div>
-    <div class="mb-3">
-      <label for="confirm" class="form-label">Confirm Password</label>
-      <input type="password" class="form-control" id="confirm" required v-model="formData.confirm" />
-    </div>
-    <div v-if="errorMsg" class="mb-3 text-danger">
-      {{ errorMsg }}
-    </div>
-    <div class="hstack mb-3">
-      <div class="ms-auto">
-        Already have an account? <router-link :to="{ name: 'login' }" active-class="active-link">Sign in</router-link>
+  <form @submit.prevent="handleRegister" novalidate>
+    <fieldset>
+      <legend class="visually-hidden">Registration Form</legend>
+      <div class="mb-3">
+        <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
+        <input type="text" class="form-control" id="name" placeholder="Your name" required v-model="formData.name"
+          autocomplete="name" aria-describedby="name-error" />
+        <div id="name-error" class="invalid-feedback d-none" v-if="errorMsg && errorMsg.includes('name')">
+          {{ errorMsg }}
+        </div>
       </div>
-    </div>
-    <div class="d-grid gap-2">
-      <button type="submit" class="btn btn-primary">Sign Up</button>
-    </div>
+      <div class="mb-3">
+        <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
+        <input type="email" class="form-control" id="email" placeholder="name@example.com" required
+          v-model="formData.email" autocomplete="email" aria-describedby="email-error" />
+        <div id="email-error" class="invalid-feedback d-none" v-if="errorMsg && errorMsg.includes('email')">
+          {{ errorMsg }}
+        </div>
+      </div>
+      <div class="mb-3">
+        <label for="password" class="form-label">Password <span class="text-danger">*</span></label>
+        <input type="password" class="form-control" id="password" required v-model="formData.password"
+          autocomplete="new-password" aria-describedby="password-error password-requirements"
+          aria-invalid="errorMsg && errorMsg.includes('password') ? 'true' : 'false'" />
+        <div id="password-requirements" class="form-text">
+          Password must be at least 6 characters long
+        </div>
+        <div id="password-error" class="invalid-feedback d-none" v-if="errorMsg && errorMsg.includes('password')">
+          {{ errorMsg }}
+        </div>
+      </div>
+      <div class="mb-3">
+        <label for="confirm" class="form-label">Confirm Password <span class="text-danger">*</span></label>
+        <input type="password" class="form-control" id="confirm" required v-model="formData.confirm"
+          autocomplete="new-password" aria-describedby="confirm-error" />
+        <div id="confirm-error" class="invalid-feedback d-none" v-if="errorMsg && errorMsg.includes('match')">
+          {{ errorMsg }}
+        </div>
+      </div>
+      <div
+        v-if="errorMsg && !errorMsg.includes('name') && !errorMsg.includes('email') && !errorMsg.includes('password') && !errorMsg.includes('match')"
+        class="mb-3 alert alert-danger" role="alert">
+        {{ errorMsg }}
+      </div>
+      <div class="hstack mb-3">
+        <div class="ms-auto">
+          Already have an account? <router-link :to="{ name: 'login' }" class="link-primary">Sign in</router-link>
+        </div>
+      </div>
+      <div class="d-grid gap-2">
+        <button type="submit" class="btn btn-primary" aria-label="Submit registration form">Sign Up</button>
+      </div>
+    </fieldset>
   </form>
 </template>
 

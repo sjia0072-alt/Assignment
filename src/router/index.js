@@ -4,6 +4,7 @@ import Register from "@/components/Register.vue";
 import AuthPage from "@/views/AuthPage.vue";
 import HomePage from "@/views/HomePage.vue";
 import AllUsersPage from "@/views/AllUsersPage.vue";
+import HealthRecommendationsPage from "@/views/HealthRecommendationsPage.vue";
 import Recommend from "@/views/Recommend.vue";
 import UserInfo from "@/views/UserInfo.vue";
 import NotFound from "@/views/NotFound.vue";
@@ -21,25 +22,31 @@ const router = createRouter({
       path: "/recommend",
       name: "recommend",
       component: Recommend,
-      meta: { requiresRole: ['admin', 'user'] },
+      meta: { requiresRole: ["admin", "user"] },
+    },
+    {
+      path: "/recommendations",
+      name: "recommendations",
+      component: HealthRecommendationsPage,
+      meta: { requiresRole: ["admin", "user"] },
     },
     {
       path: "/user-info",
       name: "user-info",
       component: UserInfo,
-      meta: { requiresRole: ['admin', 'user'] },
+      meta: { requiresRole: ["admin", "user"] },
     },
     {
       path: "/users",
       name: "users",
       component: AllUsersPage,
-      meta: { requiresRole: ['admin'] },
+      meta: { requiresRole: ["admin"] },
     },
     {
       path: "/auth",
       name: "auth",
       component: AuthPage,
-      meta: { requiresRole: ['guest'] },
+      meta: { requiresRole: ["guest"] },
       children: [
         {
           path: "",
@@ -64,14 +71,14 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
   // wait for firestore's initialization
   if (!authInitialized.value) {
-    await new Promise(resolve => {
+    await new Promise((resolve) => {
       const unwatch = setInterval(() => {
         if (authInitialized.value) {
-          clearInterval(unwatch)
-          resolve()
+          clearInterval(unwatch);
+          resolve();
         }
-      }, 50)
-    })
+      }, 50);
+    });
   }
 
   const userRole = userInfo.role;
@@ -82,12 +89,17 @@ router.beforeEach(async (to, from, next) => {
   }
 
   if (!to.meta.requiresRole.includes(userRole)) {
-    if (userRole === 'guest') {
-      console.log("Redirecting to auth - requires:", to.meta.requiresRole, "current:", userRole)
-      next({ name: 'login', query: { redirect: to.fullPath } });
+    if (userRole === "guest") {
+      console.log(
+        "Redirecting to auth - requires:",
+        to.meta.requiresRole,
+        "current:",
+        userRole
+      );
+      next({ name: "login", query: { redirect: to.fullPath } });
     } else {
-      console.log("Redirecting to home - insufficient permissions")
-      next({ name: 'home' });
+      console.log("Redirecting to home - insufficient permissions");
+      next({ name: "home" });
     }
     return;
   }
