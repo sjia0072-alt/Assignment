@@ -129,7 +129,7 @@
                     </span>
                     <div class="flex-grow-1">
                       <div class="fw-medium">{{ step.maneuver.instruction }}</div>
-                      <small class="text-muted">{{ step.distance }} m - {{ step.duration }} s</small>
+                      <small class="text-muted">{{ step.distance }} m - {{ formatDuration(step.duration) }}</small>
                     </div>
                   </div>
                 </div>
@@ -166,7 +166,7 @@ const routeLoading = ref(false)
 // MapBox token
 const MAPBOX_TOKEN = 'pk.eyJ1IjoiamlhbmcwMDciLCJhIjoiY21ncWl0dGI5MmcybjJrcTlkcDN6aDJrYyJ9.Zl5An22DIH5qs-xkxKI_wQ'
 
-// Initialize map
+// Map initialization and setup
 const initMap = () => {
   try {
     mapboxgl.accessToken = MAPBOX_TOKEN
@@ -186,6 +186,8 @@ const initMap = () => {
     errorMessage.value = 'Failed to load map. Please check your internet connection.'
   }
 }
+
+// ====== Geolocation Functions ======
 
 // Get user current location
 const getCurrentLocation = () => {
@@ -263,6 +265,8 @@ const addUserLocationMarker = () => {
   markers.value.push(userMarker)
 }
 
+// ====== Search Functions ======
+
 // Search places using MapBox API
 const searchPlaces = async () => {
   if (!searchQuery.value.trim()) {
@@ -313,6 +317,7 @@ const searchPlaces = async () => {
       errorMessage.value = 'No places found. Try a different search term.'
     }
 
+    showAllPlacesOnMap()
   } catch (error) {
     console.error('Search error:', error)
     errorMessage.value = 'Search failed. Please try again.'
@@ -332,6 +337,8 @@ const calculateDistance = (point1, point2) => {
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
   return R * c
 }
+
+// ====== Map Marker Functions ======
 
 // Create popup content for a place
 const createPopupContent = (place, isCompact = false) => {
@@ -458,7 +465,7 @@ const showPlaceOnMap = (place) => {
   })
 }
 
-// Add all search results to map
+// Show all places on map
 const showAllPlacesOnMap = () => {
   if (!map.value) return
 
@@ -481,17 +488,22 @@ const showAllPlacesOnMap = () => {
   }
 }
 
-// Initialize on component mount
-onMounted(() => {
-  initMap()
-  // Global function for popup navigation button
-  window.navigateFromPopup = (placeId) => {
-    const place = places.value.find(p => p.id === placeId)
-    if (place) {
-      getDirections(place)
-    }
+// ====== Navigation Functions ======
+
+// Format duration from seconds to readable format
+const formatDuration = (seconds) => {
+  const minutes = Math.round(seconds / 60)
+  if (seconds < 60) {
+    return seconds.toFixed(1) + ' s'
   }
-})
+  if (minutes < 60) {
+    return minutes + ' min ' + (seconds % 60).toFixed(0) + ' s'
+  } else {
+    const hours = Math.floor(minutes / 60)
+    const remainingMinutes = minutes % 60
+    return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`
+  }
+}
 
 // Get directions from user location to destination
 const getDirections = async (place) => {
@@ -548,18 +560,6 @@ const getDirections = async (place) => {
   }
 }
 
-// Format duration from seconds to readable format
-const formatDuration = (seconds) => {
-  const minutes = Math.round(seconds / 60)
-  if (minutes < 60) {
-    return `${minutes} min`
-  } else {
-    const hours = Math.floor(minutes / 60)
-    const remainingMinutes = minutes % 60
-    return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`
-  }
-}
-
 // Draw route on map
 const drawRoute = (geometry) => {
   if (!map.value) return
@@ -608,6 +608,19 @@ const clearRoute = () => {
   }
 }
 
+// ====== Lifecycle ======
+
+// Initialize on component mount
+onMounted(() => {
+  initMap()
+  // Global function for popup navigation button
+  window.navigateFromPopup = (placeId) => {
+    const place = places.value.find(p => p.id === placeId)
+    if (place) {
+      getDirections(place)
+    }
+  }
+})
 
 // Cleanup on unmount
 onUnmounted(() => {
@@ -626,15 +639,5 @@ onUnmounted(() => {
 
 .list-group-item:hover {
   background-color: #f8f9fa;
-}
-
-.card {
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-@media (max-width: 768px) {
-  #map {
-    height: 400px !important;
-  }
 }
 </style>
