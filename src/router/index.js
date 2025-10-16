@@ -5,11 +5,14 @@ import AuthPage from "@/views/AuthPage.vue";
 import HomePage from "@/views/HomePage.vue";
 import AllUsersPage from "@/views/AllUsersPage.vue";
 import HealthRecommendationsPage from "@/views/HealthRecommendationsPage.vue";
+import ApiUsersPage from "@/views/ApiUsersPage.vue";
+import ApiHealthRecommendationsPage from "@/views/ApiHealthRecommendationsPage.vue";
 import Recommend from "@/views/Recommend.vue";
 import UserInfo from "@/views/UserInfo.vue";
 import EmailBroadcastPage from "@/views/EmailBroadcastPage.vue";
+import InteractiveMapPage from "@/views/InteractiveMapPage.vue";
 import NotFound from "@/views/NotFound.vue";
-import { userInfo, authInitialized } from "@/service/auth";
+import { userInfo, authInitialized, cacheLoaded } from "@/service/auth";
 
 const router = createRouter({
   history: createWebHistory(),
@@ -44,10 +47,28 @@ const router = createRouter({
       meta: { requiresRole: ["admin"] },
     },
     {
+      path: "/api/users",
+      name: "api-users",
+      component: ApiUsersPage,
+      meta: { requiresRole: ["admin"], isApiPage: true },
+    },
+    {
+      path: "/api/recommendations",
+      name: "api-recommendations",
+      component: ApiHealthRecommendationsPage,
+      meta: { requiresRole: ["admin", "user"], isApiPage: true },
+    },
+    {
       path: "/email-broadcast",
       name: "email-broadcast",
       component: EmailBroadcastPage,
       meta: { requiresRole: ["admin"] },
+    },
+    {
+      path: "/interactive-map",
+      name: "interactive-map",
+      component: InteractiveMapPage,
+      meta: { requiresRole: ["admin", "user"] },
     },
     {
       path: "/auth",
@@ -76,7 +97,30 @@ const router = createRouter({
 });
 
 router.beforeEach(async (to, from, next) => {
-  // wait for firestore's initialization
+  const userRole = userInfo.role;
+
+  // For API pages, skip role checks
+  if (to.meta.isApiPage) {
+    if (!to.meta.requiresRole) {
+      next();
+      return;
+    }
+
+    if (!to.meta.requiresRole.includes(userRole)) {
+      if (userRole === "guest") {
+        console.log("API: Redirecting to auth");
+        next({ name: "login", query: { redirect: to.fullPath } });
+      } else {
+        console.log("API: Insufficient permissions");
+        next({ name: "home" });
+      }
+      return;
+    }
+
+    next();
+    return;
+  }
+
   if (!authInitialized.value) {
     await new Promise((resolve) => {
       const unwatch = setInterval(() => {
@@ -87,8 +131,6 @@ router.beforeEach(async (to, from, next) => {
       }, 50);
     });
   }
-
-  const userRole = userInfo.role;
 
   if (!to.meta.requiresRole) {
     next();

@@ -151,3 +151,280 @@ exports.sendEmailWithAttachments = onCall({
     throw new Error(error.message || 'Failed to send email');
   }
 });
+
+/**
+ * Helper function to verify admin privileges
+ */
+async function verifyAdmin(request) {
+  if (!request.auth) {
+    throw new Error("Authentication required");
+  }
+
+  const db = admin.firestore();
+  const userDoc = await db.collection('users').where('email', '==', request.auth.token.email).get();
+
+  if (userDoc.empty) {
+    throw new Error("User not found");
+  }
+
+  const userData = userDoc.docs[0].data();
+  if (userData.role !== 'admin') {
+    throw new Error("Admin access required");
+  }
+
+  return { userData, db };
+}
+
+/**
+ * Get all users from Firebase Authentication and Firestore
+ * This is a callable function that can be called from the frontend
+ */
+exports.getAllUsers = onCall({
+  region: 'us-central1',
+  maxInstances: 5,
+}, async (request) => {
+  try {
+    // Verify admin privileges
+    const { db } = await verifyAdmin(request);
+
+    // Get all users from Firebase Authentication
+    const listUsersResult = await admin.auth().listUsers(1000);
+    const authUsers = listUsersResult.users;
+
+    // Get all users from Firestore
+    const firestoreUsers = await db.collection('users').get();
+    const firestoreUserData = {};
+
+    // Create a map of email to Firestore data for quick lookup
+    firestoreUsers.forEach(doc => {
+      const data = doc.data();
+      firestoreUserData[data.email] = {
+        id: doc.id,
+        ...data
+      };
+    });
+
+    // Combine auth and firestore data
+    const combinedUsers = authUsers.map(authUser => {
+      const firestoreData = firestoreUserData[authUser.email] || {};
+
+      return {
+        uid: authUser.uid,
+        email: authUser.email,
+        phoneNumber: authUser.phoneNumber,
+        emailVerified: authUser.emailVerified,
+        displayName: authUser.displayName,
+        photoURL: authUser.photoURL,
+        disabled: authUser.disabled,
+        createdAt: authUser.metadata.creationTime,
+        lastSignInAt: authUser.metadata.lastSignInTime,
+        // Firestore data
+        name: firestoreData.name || authUser.displayName || '',
+        role: firestoreData.role || 'user',
+        firestoreId: firestoreData.id || null,
+        additionalData: firestoreData
+      };
+    });
+
+    logger.info(`Retrieved ${combinedUsers.length} users`);
+
+    return {
+      success: true,
+      users: combinedUsers,
+      total: combinedUsers.length
+    };
+
+  } catch (error) {
+    logger.error("Error getting users", { error: error.message });
+    throw new Error(error.message || 'Failed to get users');
+  }
+});
+
+/**
+ * Update user information in Firestore and optionally Firebase Auth
+ * This is a callable function that can be called from the frontend
+ */
+exports.updateUser = onCall({
+  region: 'us-central1',
+  maxInstances: 5,
+}, async (request) => {
+  try {
+    // Verify admin privileges
+    const { db } = await verifyAdmin(request);
+
+    const { uid, updates } = request.data;
+
+    // Validate required fields
+    if (!uid) {
+      throw new Error("User UID is required");
+    }
+
+    if (!updates || typeof updates !== 'object') {
+      throw new Error("Update data is required");
+    }
+
+    // Get the user to find their email
+    let userRecord;
+    try {
+      userRecord = await admin.auth().getUser(uid);
+    } catch (error) {
+      throw new Error("User not found in Firebase Authentication");
+    }
+
+    let updateResults = {
+      firestoreUpdated: false,
+      authUpdated: false,
+      errors: []
+    };
+
+    // Update Firestore user documents
+    try {
+      // 1. Try to update by UID as document ID
+      const uidDocRef = db.collection('users').doc(uid);
+      const uidDoc = await uidDocRef.get();
+
+      if (uidDoc.exists) {
+        await uidDocRef.update(updates);
+        updateResults.firestoreUpdated = true;
+        logger.info(`Updated Firestore document by UID: ${uid}`);
+      } else {
+        // 2. Try to find and update by email
+        const emailQuery = await db.collection('users').where('email', '==', userRecord.email).get();
+
+        if (!emailQuery.empty) {
+          const updatePromises = emailQuery.docs.map(doc =>
+            doc.ref.update(updates).then(() => ({ id: doc.id, success: true }))
+          );
+          const results = await Promise.all(updatePromises);
+          updateResults.firestoreUpdated = true;
+          logger.info(`Updated ${results.length} Firestore documents by email: ${userRecord.email}`);
+        } else {
+          updateResults.errors.push("No Firestore document found for this user");
+        }
+      }
+    } catch (firestoreError) {
+      updateResults.errors.push(`Firestore update error: ${firestoreError.message}`);
+    }
+
+    // Update Firebase Auth if displayName is provided
+    if (updates.name && typeof updates.name === 'string') {
+      try {
+        await admin.auth().updateUser(uid, {
+          displayName: updates.name.trim()
+        });
+        updateResults.authUpdated = true;
+        logger.info(`Updated Firebase Auth displayName for user: ${uid}`);
+      } catch (authError) {
+        updateResults.errors.push(`Auth update error: ${authError.message}`);
+      }
+    }
+
+    logger.info(`User update completed for UID: ${uid}`, updateResults);
+
+    return {
+      success: updateResults.firestoreUpdated || updateResults.authUpdated,
+      message: `User updated. Firestore: ${updateResults.firestoreUpdated ? '✓' : '✗'}, Auth: ${updateResults.authUpdated ? '✓' : '✗'}`,
+      updateResults
+    };
+
+  } catch (error) {
+    logger.error("Error updating user", { error: error.message });
+    throw new Error(error.message || 'Failed to update user');
+  }
+});
+
+/**
+ * Delete user from Firebase Authentication and Firestore
+ * This is a callable function that can be called from the frontend
+ */
+exports.deleteUser = onCall({
+  region: 'us-central1',
+  maxInstances: 5,
+}, async (request) => {
+  try {
+    // Verify admin privileges
+    const { db } = await verifyAdmin(request);
+
+    const { uid } = request.data;
+
+    // Validate required fields
+    if (!uid) {
+      throw new Error("User UID is required");
+    }
+
+    // Get the user before deletion for logging
+    let userRecord;
+    try {
+      userRecord = await admin.auth().getUser(uid);
+    } catch (error) {
+      throw new Error("User not found in Firebase Authentication");
+    }
+
+    let deleteResults = {
+      authDeleted: false,
+      firestoreDeleted: false,
+      deletedDocs: [],
+      errors: []
+    };
+
+    // Delete from Firebase Authentication
+    try {
+      await admin.auth().deleteUser(uid);
+      deleteResults.authDeleted = true;
+      logger.info(`Deleted user from Firebase Auth: ${userRecord.email || uid}`);
+    } catch (authError) {
+      deleteResults.errors.push(`Auth deletion error: ${authError.message}`);
+      throw new Error(`Failed to delete user from Authentication: ${authError.message}`);
+    }
+
+    // Delete from Firestore
+    try {
+      // 1. Try to delete by UID as document ID
+      const uidDocRef = db.collection('users').doc(uid);
+      const uidDoc = await uidDocRef.get();
+
+      if (uidDoc.exists) {
+        await uidDocRef.delete();
+        deleteResults.firestoreDeleted = true;
+        deleteResults.deletedDocs.push(uid);
+        logger.info(`Deleted Firestore document by UID: ${uid}`);
+      }
+
+      // 2. Try to find and delete by email (registration method)
+      const emailQuery = await db.collection('users').where('email', '==', userRecord.email).get();
+
+      if (!emailQuery.empty) {
+        const deletePromises = emailQuery.docs.map(doc =>
+          doc.ref.delete().then(() => doc.id)
+        );
+        const deletedIds = await Promise.all(deletePromises);
+        deleteResults.firestoreDeleted = true;
+        deleteResults.deletedDocs.push(...deletedIds);
+        logger.info(`Deleted ${deletedIds.length} Firestore documents by email: ${userRecord.email}`);
+      }
+
+      if (!deleteResults.firestoreDeleted) {
+        deleteResults.errors.push("No Firestore documents found for this user");
+      }
+    } catch (firestoreError) {
+      deleteResults.errors.push(`Firestore deletion error: ${firestoreError.message}`);
+    }
+
+    logger.info(`User deletion completed for: ${userRecord.email || uid}`, deleteResults);
+
+    return {
+      success: deleteResults.authDeleted,
+      message: `User ${userRecord.email || uid} deleted successfully`,
+      deletedUser: {
+        uid: uid,
+        email: userRecord.email,
+        deletedDocs: deleteResults.deletedDocs
+      },
+      deleteResults
+    };
+
+  } catch (error) {
+    logger.error("Error deleting user", { error: error.message });
+    throw new Error(error.message || 'Failed to delete user');
+  }
+});

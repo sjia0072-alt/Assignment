@@ -29,6 +29,11 @@
             Health Data
           </router-link>
         </li>
+        <li v-if="userInfo.role !== 'guest'" class="nav-item bg-primary bg-opacity-25 rounded">
+          <router-link to="/interactive-map" class="nav-link" active-class="active">
+            Interactive Map
+          </router-link>
+        </li>
         <li v-if="userInfo.role == 'admin'" class="nav-item bg-primary bg-opacity-25 rounded">
           <router-link to="/users" class="nav-link" active-class="active">
             Users

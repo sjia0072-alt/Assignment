@@ -4,7 +4,7 @@
       <div class="col-lg-8">
         <header class="text-center mb-5">
           <h1 id="homepage-heading" class="display-4 fw-bold text-primary">
-            Welcome to Health Advice Platform
+            Welcome to Wellness360
           </h1>
           <p class="lead mt-3 text-muted">
             Get personalized health recommendations and improve your well-being
@@ -16,7 +16,7 @@
               aria-label="Get started with health advice">
               Get Started
             </router-link>
-            <router-link to="/recommend" class="btn btn-success btn-lg" v-else
+            <router-link to="/recommendations" class="btn btn-success btn-lg" v-else
               aria-label="View your personalized health recommendations">
               View My Recommendations
             </router-link>

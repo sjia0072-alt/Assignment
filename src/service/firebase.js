@@ -3,6 +3,7 @@ import { initializeApp } from "firebase/app";
 import { getAuth } from 'firebase/auth'
 import { getFirestore } from 'firebase/firestore'
 import { getFunctions, connectFunctionsEmulator } from 'firebase/functions'
+import { getAI, getGenerativeModel, GoogleAIBackend } from "firebase/ai"
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -23,9 +24,24 @@ const auth = getAuth(app);
 
 // Initialize Functions and connect to emulator (for development)
 const functions = getFunctions(app);
-if (window.location.hostname === 'localhost') {
-  connectFunctionsEmulator(functions, 'localhost', 5001);
-  console.log('Connected to Firebase Functions emulator');
+connectFunctionsEmulator(functions, 'localhost', 5001);
+console.log('Connected to Firebase Functions emulator');
+
+// Initialize AI service
+let ai = null;
+let model = null;
+
+try {
+  // Initialize the Gemini Developer API backend service
+  ai = getAI(app, { backend: new GoogleAIBackend() });
+
+  // Create a `GenerativeModel` instance
+  model = getGenerativeModel(ai, { model: "gemini-2.5-flash-lite" });
+
+  console.log('Firebase AI initialized successfully');
+} catch (error) {
+  console.warn('Failed to initialize Firebase AI:', error.message);
+  // AI service will be unavailable, but other Firebase services will work
 }
 
-export { db, auth, functions }
+export { db, auth, functions, ai, model }

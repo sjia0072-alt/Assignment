@@ -16,6 +16,10 @@ import Dropdown from 'primevue/dropdown';
 import Tag from 'primevue/tag';
 import ProgressSpinner from 'primevue/progressspinner';
 import Toast from 'primevue/toast';
+import Avatar from 'primevue/avatar';
+import Dialog from 'primevue/dialog';
+import Checkbox from 'primevue/checkbox';
+import Tooltip from 'primevue/tooltip';
 
 import 'bootstrap/dist/css/bootstrap.min.css'
 import 'bootstrap/dist/js/bootstrap.bundle.min.js'
@@ -40,6 +44,12 @@ app.component('Dropdown', Dropdown);
 app.component('Tag', Tag);
 app.component('ProgressSpinner', ProgressSpinner);
 app.component('Toast', Toast);
+app.component('Avatar', Avatar);
+app.component('Dialog', Dialog);
+app.component('Checkbox', Checkbox);
+
+// Register PrimeVue directives
+app.directive('tooltip', Tooltip);
 
 app.use(router);
 app.mount('#app');

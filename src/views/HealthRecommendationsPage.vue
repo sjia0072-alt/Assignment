@@ -1,12 +1,13 @@
 <template>
   <section>
     <h1>Health Recommendations</h1>
-    <DataTable v-model:filters="filters" :value="recommendations" :paginator="true" :rows="10" :dataKey="'id'" :loading="loading"
-      :sortField="sortField" :sortOrder="sortOrder" filterDisplay="row" @sort="onSort($event)" aria-label="Health recommendations table with sorting and filtering"
-      stripedRows responsiveLayout="scroll">
+    <DataTable ref="dt" v-model:filters="filters" :value="recommendations" :paginator="true" :rows="10" :dataKey="'id'"
+      :loading="loading" :sortField="sortField" :sortOrder="sortOrder" filterDisplay="row" @sort="onSort($event)"
+      aria-label="Health recommendations table with sorting and filtering" stripedRows responsiveLayout="scroll">
       <template #header>
-        <div class="flex justify-content-start align-items-center">
+        <div class="d-flex justify-content-between align-items-center">
           <h5 class="m-0">Health Advice Management</h5>
+          <Button icon="pi pi-external-link" label="Export" @click="exportCSV($event)" />
         </div>
       </template>
 
@@ -71,23 +72,12 @@
         </template>
       </Column>
 
-      <Column field="createdDate" header="Created" sortable dataType="date">
+      <Column field="createdDate" header="Created" sortable dataType="date" exportHeader="Created Date">
         <template #body="{ data }">
           <div class="flex align-items-center">
             <i class="pi pi-calendar mr-2 text-muted"></i>
             <span>{{ formatDate(data.createdDate) }}</span>
           </div>
-        </template>
-      </Column>
-
-      <Column header="Actions" :exportable="false" style="min-width: 8rem">
-        <template #body="{ data }">
-          <Button icon="pi pi-eye" class="p-button-rounded p-button-text p-button-info mr-2"
-            @click="viewRecommendation(data)" aria-label="View recommendation details" />
-          <Button icon="pi pi-share-alt" class="p-button-rounded p-button-text p-button-success mr-2"
-            @click="shareRecommendation(data)" aria-label="Share recommendation" />
-          <Button icon="pi pi-bookmark" class="p-button-rounded p-button-text p-button-warning"
-            @click="saveRecommendation(data)" aria-label="Save recommendation" />
         </template>
       </Column>
     </DataTable>
@@ -97,12 +87,14 @@
 <script setup>
 import { onMounted, ref } from 'vue';
 import { useToast } from 'primevue/usetoast';
+import { loadAll } from '@/service/store';
 
 const toast = useToast();
 const recommendations = ref([]);
 const loading = ref(true);
 const sortField = ref('priority');
 const sortOrder = ref(-1);
+const dt = ref();
 
 // Filters for DataTable
 const filters = ref({
@@ -180,152 +172,16 @@ function onSort(event) {
   sortOrder.value = event.sortOrder;
 }
 
-function viewRecommendation(recommendation) {
-  toast.add({
-    severity: 'info',
-    summary: 'View Recommendation',
-    detail: `Opening: ${recommendation.title}`,
-    life: 3000
-  });
-}
-
-function shareRecommendation(recommendation) {
-  toast.add({
-    severity: 'success',
-    summary: 'Share Recommendation',
-    detail: `${recommendation.title} shared successfully!`,
-    life: 3000
-  });
-}
-
-function saveRecommendation(recommendation) {
-  toast.add({
-    severity: 'warn',
-    summary: 'Save Recommendation',
-    detail: `${recommendation.title} saved to your collection!`,
-    life: 3000
-  });
-}
+const exportCSV = () => {
+  dt.value.exportCSV();
+};
 
 onMounted(async () => {
   try {
     loading.value = true;
 
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    // Sample health recommendations data
-    recommendations.value = [
-      {
-        id: '1',
-        title: 'Daily Water Intake Guidelines',
-        category: 'Nutrition',
-        priority: 'High',
-        targetAudience: 'All Users',
-        createdDate: '2024-01-15',
-        description: 'Stay hydrated with 8-10 glasses of water daily.'
-      },
-      {
-        id: '2',
-        title: '30-Minute Morning Workout',
-        category: 'Exercise',
-        priority: 'Medium',
-        targetAudience: 'Adults',
-        createdDate: '2024-01-20',
-        description: 'Start your day with energizing exercises.'
-      },
-      {
-        id: '3',
-        title: 'Stress Management Techniques',
-        category: 'Mental Health',
-        priority: 'High',
-        targetAudience: 'Working Professionals',
-        createdDate: '2024-02-01',
-        description: 'Learn effective stress reduction methods.'
-      },
-      {
-        id: '4',
-        title: 'Quality Sleep Tips',
-        category: 'Sleep',
-        priority: 'High',
-        targetAudience: 'All Users',
-        createdDate: '2024-02-10',
-        description: 'Improve your sleep quality with these tips.'
-      },
-      {
-        id: '5',
-        title: 'Seasonal Flu Prevention',
-        category: 'Prevention',
-        priority: 'Medium',
-        targetAudience: 'Elderly',
-        createdDate: '2024-02-15',
-        description: 'Protect yourself during flu season.'
-      },
-      {
-        id: '6',
-        title: 'Mediterranean Diet Benefits',
-        category: 'Nutrition',
-        priority: 'Medium',
-        targetAudience: 'Adults',
-        createdDate: '2024-02-20',
-        description: 'Discover heart-healthy eating patterns.'
-      },
-      {
-        id: '7',
-        title: 'Strength Training Basics',
-        category: 'Exercise',
-        priority: 'Low',
-        targetAudience: 'Beginners',
-        createdDate: '2024-03-01',
-        description: 'Get started with strength training exercises.'
-      },
-      {
-        id: '8',
-        title: 'Mindfulness Meditation',
-        category: 'Mental Health',
-        priority: 'Medium',
-        targetAudience: 'All Users',
-        createdDate: '2024-03-05',
-        description: 'Practice mindfulness for better mental health.'
-      },
-      {
-        id: '9',
-        title: 'Healthy Breakfast Ideas',
-        category: 'Nutrition',
-        priority: 'Low',
-        targetAudience: 'All Users',
-        createdDate: '2024-03-10',
-        description: 'Start your day with nutritious breakfast options.'
-      },
-      {
-        id: '10',
-        title: 'Yoga for Flexibility',
-        category: 'Exercise',
-        priority: 'Low',
-        targetAudience: 'Seniors',
-        createdDate: '2024-03-15',
-        description: 'Gentle yoga poses to improve flexibility.'
-      },
-      {
-        id: '11',
-        title: 'Digital Detox Strategies',
-        category: 'Mental Health',
-        priority: 'Medium',
-        targetAudience: 'Young Adults',
-        createdDate: '2024-03-20',
-        description: 'Reduce screen time and improve well-being.'
-      },
-      {
-        id: '12',
-        title: 'Immune System Boosters',
-        category: 'Prevention',
-        priority: 'High',
-        targetAudience: 'All Users',
-        createdDate: '2024-03-25',
-        description: 'Natural ways to strengthen your immune system.'
-      }
-    ];
-
+    // Load health recommendations from Firestore
+    recommendations.value = await loadAll('healthRecommendations')
   } catch (error) {
     console.error('Failed to load recommendations:', error);
     toast.add({

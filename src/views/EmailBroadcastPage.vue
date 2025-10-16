@@ -24,12 +24,22 @@
 
               <!-- Message -->
               <div class="mb-3">
-                <label for="message" class="form-label fw-bold">Message</label>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <label for="message" class="form-label fw-bold mb-0">Message</label>
+                  <button type="button" class="btn btn-sm btn-outline-primary" @click="improveDraft"
+                    :disabled="isImproving || !emailData.message.trim()"
+                    v-tooltip="'Improve your draft with AI - automatically formats email and generates subject'"
+                    aria-label="Improve email draft with AI">
+                    <i v-if="isImproving" class="pi pi-spin pi-spinner me-1" aria-hidden="true"></i>
+                    <i v-else class="pi pi-bolt me-1" aria-hidden="true"></i>
+                    {{ isImproving ? 'Improving...' : 'AI Improve' }}
+                  </button>
+                </div>
                 <textarea v-model="emailData.message" class="form-control" id="message" rows="8"
                   placeholder="Type your message here..." required aria-required="true"
                   aria-describedby="message-help"></textarea>
                 <div id="message-help" class="form-text">
-                  Write the content of your email message here
+                  Write the content of your email message here, or click "AI Improve" to enhance your draft
                 </div>
               </div>
 
@@ -124,7 +134,7 @@
 import { ref, onMounted } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import { loadAll } from '@/service/store';
-import { sendEmailWithAttachments } from '@/service/emailService';
+import { sendEmailWithAttachments, improveEmailDraft } from '@/service/emailService';
 
 const toast = useToast();
 
@@ -139,6 +149,7 @@ const emailData = ref({
 const users = ref([]);
 const selectedFiles = ref([]);
 const isSending = ref(false);
+const isImproving = ref(false);
 
 // Load users for selection
 onMounted(async () => {
@@ -201,6 +212,102 @@ function selectAllUsers() {
 // Deselect all users
 function deselectAllUsers() {
   emailData.value.recipients = [];
+}
+
+// Improve email draft with AI
+async function improveDraft() {
+  if (!emailData.value.message.trim()) {
+    toast.add({
+      severity: 'warn',
+      summary: 'No Content',
+      detail: 'Please write some draft content before improving it',
+      life: 3000
+    });
+    return;
+  }
+
+  try {
+    isImproving.value = true;
+
+    const result = await improveEmailDraft(
+      emailData.value.message.trim(),
+      emailData.value.subject
+    );
+
+    if (result.error) {
+      throw new Error(result.error);
+    }
+
+    // Update both subject and message with improved versions
+    emailData.value.subject = result.subject;
+    emailData.value.message = result.message;
+
+    toast.add({
+      severity: 'success',
+      summary: 'Draft Improved',
+      detail: 'Your email has been improved with AI. Subject and content have been updated.',
+      life: 4000
+    });
+
+  } catch (error) {
+    console.error('Error improving draft:', error);
+
+    // If AI service is not available, provide a fallback improvement
+    if (error.message.includes('AI service') || error.message.includes('Failed to initialize')) {
+      // Simple fallback improvement
+      const improvedMessage = formatBasicEmail(emailData.value.message.trim());
+      const improvedSubject = generateBasicSubject(emailData.value.message.trim(), emailData.value.subject);
+
+      emailData.value.subject = improvedSubject;
+      emailData.value.message = improvedMessage;
+
+      toast.add({
+        severity: 'info',
+        summary: 'Basic Improvement Applied',
+        detail: 'AI service unavailable. Basic formatting has been applied instead.',
+        life: 4000
+      });
+    } else {
+      toast.add({
+        severity: 'error',
+        summary: 'Improvement Failed',
+        detail: error.message || 'Failed to improve email draft',
+        life: 4000
+      });
+    }
+  } finally {
+    isImproving.value = false;
+  }
+}
+
+// Basic email formatting as fallback
+function formatBasicEmail(content) {
+  // Remove extra whitespace and ensure proper line breaks
+  let formatted = content.replace(/\s+/g, ' ').trim();
+
+  // Add basic email structure if not present
+  if (!formatted.toLowerCase().includes('dear') && !formatted.toLowerCase().includes('hello')) {
+    formatted = `Dear Team,\n\n${formatted}`;
+  }
+
+  if (!formatted.toLowerCase().includes('regards') && !formatted.toLowerCase().includes('sincerely') && !formatted.toLowerCase().includes('best')) {
+    formatted += '\n\nBest regards';
+  }
+
+  return formatted;
+}
+
+// Basic subject generation as fallback
+function generateBasicSubject(content, currentSubject) {
+  if (currentSubject && currentSubject.trim()) {
+    return currentSubject.trim();
+  }
+
+  // Extract key words from content to create a subject
+  const words = content.split(' ').filter(word => word.length > 3);
+  const firstFewWords = words.slice(0, 5).join(' ');
+
+  return firstFewWords.charAt(0).toUpperCase() + firstFewWords.slice(1) || 'Email Update';
 }
 
 // Clear form

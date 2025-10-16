@@ -15,7 +15,7 @@ import Toast from 'primevue/toast';
     </main>
     <footer class="bg-light text-center py-3 mt-auto" role="contentinfo">
       <div class="container">
-        <p class="mb-0 text-muted small">&copy; 2025 Health Advice Platform. All rights reserved.</p>
+        <p class="mb-0 text-muted small">&copy; 2025 Wellness360. All rights reserved.</p>
       </div>
     </footer>
   </div>
